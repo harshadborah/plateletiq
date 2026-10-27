@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PlateletIQ Simulation</title>
+<meta name="description" content="Interactive simulation: AI-driven platelet inventory and redistribution across a hospital network during dengue season. AI Case Study by Harshad Borah (24BCE0666).">
+<style>
+:root{
+  --bg:#f4f4f2; --panel:#ffffff; --ink:#111111; --ink2:#444444; --muted:#7a7a7a; --line:#d9d9d6; --soft:#ececea;
+  --ai:#111111; --base:#9a9a9a; --alert:#b3261e; --good:#1f1f1f;
+  --age1:#e6e6e3; --age2:#c4c4c0; --age3:#8f8f8b; --age4:#555553; --age5:#222222;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5}
+a{color:var(--ink)}
+.wrap{max-width:1240px;margin:0 auto;padding:0 20px}
+header{border-bottom:1px solid var(--line);background:var(--panel)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;flex-wrap:wrap}
+.brand{font-weight:700;letter-spacing:.02em;font-size:18px}
+.brand span{font-weight:400;color:var(--muted)}
+.meta{font-size:13px;color:var(--ink2)}
+.intro{padding:22px 0 8px}
+.intro h1{font-size:26px;line-height:1.25;margin:0 0 8px;font-weight:650;letter-spacing:-.01em}
+.intro p{margin:0;color:var(--ink2);max-width:860px}
+.grid{display:grid;grid-template-columns:300px 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px}
+.card h2{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:0 0 12px;font-weight:600}
+label{display:block;font-size:13px;color:var(--ink2);margin:10px 0 4px}
+select,input[type=number]{width:100%;padding:7px 8px;border:1px solid var(--line);border-radius:4px;background:#fff;color:var(--ink);font:inherit;font-size:14px}
+input[type=range]{width:100%;accent-color:#222}
+.rv{float:right;font-family:var(--mono);font-size:12px;color:var(--ink)}
+.checks label{display:flex;gap:8px;align-items:flex-start;margin:7px 0;cursor:pointer}
+.checks input{margin-top:3px;accent-color:#111}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+button{font:inherit;font-size:14px;padding:9px 10px;border-radius:4px;border:1px solid #111;background:#fff;color:#111;cursor:pointer}
+button.primary{background:#111;color:#fff}
+button:hover{filter:brightness(.92)}
+button:disabled{opacity:.45;cursor:default}
+.status{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+.day{font-family:var(--mono);font-size:22px;font-weight:600}
+.bar{flex:1;min-width:160px;height:6px;background:var(--soft);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:#111;transition:width .15s}
+.chip{font-size:12px;padding:3px 8px;border:1px solid var(--line);border-radius:20px;color:var(--ink2);white-space:nowrap}
+.chip.on{border-color:#111;color:#111;font-weight:600}
+.chip.alert{border-color:var(--alert);color:var(--alert)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:right;padding:7px 8px;border-bottom:1px solid var(--soft)}
+th:first-child,td:first-child{text-align:left}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+td.num{font-family:var(--mono)}
+td.better{font-weight:700}
+td.delta{font-family:var(--mono);font-size:13px}
+.nets{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.net h3{margin:0 0 4px;font-size:14px;font-weight:650}
+.net h3 small{font-weight:400;color:var(--muted)}
+svg.netsvg{width:100%;height:auto;display:block}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink2);margin-top:6px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.sw{width:12px;height:10px;display:inline-block;border:1px solid #999}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.chart h3{margin:0 0 6px;font-size:13px;font-weight:600}
+.chart canvas{width:100%;height:210px;display:block}
+.keyline{display:flex;gap:14px;font-size:12px;color:var(--ink2);margin-top:4px;flex-wrap:wrap}
+.keyline b{display:inline-block;width:18px;height:0;border-top:2px solid #111;vertical-align:middle;margin-right:4px}
+.keyline b.g{border-top:2px dashed var(--base)}
+.keyline b.f{border-top:2px dotted #666}
+.keyline b.r{border-top:6px solid #e3e3e0}
+.log{font-family:var(--mono);font-size:12px;max-height:220px;overflow:auto;background:#fafaf9;border:1px solid var(--soft);border-radius:4px;padding:8px 10px}
+.log div{padding:2px 0;border-bottom:1px dotted #e5e5e5}
+.log div b{display:inline-block;min-width:58px;color:var(--muted);font-weight:400}
+.section{margin:16px 0}
+.how{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.step{border:1px solid var(--line);border-radius:6px;padding:12px;background:#fff}
+.step b{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:4px}
+.step h4{margin:0 0 6px;font-size:14px}
+.step p{margin:0;font-size:13px;color:var(--ink2)}
+.eq{font-family:var(--mono);font-size:12.5px;background:#fafaf9;border:1px solid var(--soft);padding:10px 12px;border-radius:4px;overflow-x:auto;white-space:pre}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.two>*,.grid>*,.nets>*,.charts>*,.how>*{min-width:0}
+#kpi,#btab{min-width:0}
+.tablewrap{overflow-x:auto}
+.small{font-size:13px;color:var(--ink2)}
+footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 30px;font-size:13px;color:var(--muted)}
+.batchrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.batchrow button{width:auto}
+.err{display:none;background:#fff3f2;border:1px solid var(--alert);color:var(--alert);padding:10px;border-radius:4px;margin:10px 0}
+@media (max-width:980px){.grid{grid-template-columns:1fr}.how{grid-template-columns:1fr 1fr}}
+@media (max-width:720px){.nets,.charts,.two{grid-template-columns:1fr}.how{grid-template-columns:1fr}.intro h1{font-size:21px}.wrap{padding:0 14px}th,td{padding:6px 4px;font-size:13px}}
+</style>
+</head>
+<body>
+<header><div class="wrap top">
+  <div class="brand">PlateletIQ <span>· network simulation</span></div>
+  <div class="meta">Artificial Intelligence Case Study · Harshad Borah · 24BCE0666</div>
+</div></header>
+
+<main class="wrap">
+  <section class="intro">
+    <h1>Can AI stop hospitals from throwing away platelets while patients go short in dengue season?</h1>
+    <p>Platelets last only 5 days. This simulation runs a regional blood centre and its hospitals through a season twice, on identical random demand and donations. One run uses <b>current practice</b> and the other uses <b>PlateletIQ</b>, an AI policy that learns demand from a leading fever-surveillance signal and then plans separation, allocation, sharing and donor drives. Press <b>Run</b> to start.</p>
+  </section>
+  <div id="err" class="err"></div>
+
+  <div class="grid">
+    <aside class="card" aria-label="Controls">
+      <h2>Scenario</h2>
+      <label for="scen">Season</label>
+      <select id="scen"></select>
+      <label for="seed">Random seed <span class="rv">same seed = same world</span></label>
+      <input id="seed" type="number" min="1" max="999999" value="2026">
+      <label for="nh">Hospitals <span class="rv" id="nhv"></span></label>
+      <input id="nh" type="range" min="4" max="8" step="1" value="6">
+      <label for="shelf">Platelet shelf life (days) <span class="rv" id="shelfv"></span></label>
+      <input id="shelf" type="range" min="4" max="7" step="1" value="5">
+      <label for="sup">Donor supply vs normal demand <span class="rv" id="supv"></span></label>
+      <input id="sup" type="range" min="0.9" max="1.4" step="0.05" value="1.15">
+      <label for="amp">Outbreak intensity <span class="rv" id="ampv"></span></label>
+      <input id="amp" type="range" min="0" max="2" step="0.1" value="0.9">
+
+      <h2 style="margin-top:18px">PlateletIQ components</h2>
+      <div class="checks">
+        <label><input type="checkbox" id="c_forecast" checked> Fever-signal demand forecaster (online learning)</label>
+        <label><input type="checkbox" id="c_smartProduction" checked> Demand-driven component separation</label>
+        <label><input type="checkbox" id="c_ageAlloc" checked> Age-aware allocation</label>
+        <label><input type="checkbox" id="c_transship" checked> Lateral sharing of near-expiry units</label>
+        <label><input type="checkbox" id="c_donorDrive" checked> Proactive donor-drive trigger</label>
+      </div>
+
+      <h2 style="margin-top:18px">Playback</h2>
+      <label for="speed">Speed <span class="rv" id="speedv"></span></label>
+      <input id="speed" type="range" min="1" max="30" step="1" value="8">
+      <div class="btns">
+        <button id="play" class="primary">▶ Run</button>
+        <button id="stepb">+1 day</button>
+        <button id="end">Run to end</button>
+        <button id="reset">Reset</button>
+      </div>
+      <p class="small" style="margin-top:12px">Changing any setting resets the season. Each policy gets exactly the same patients and donors.</p>
+    </aside>
+
+    <section>
+      <div class="card">
+        <div class="status">
+          <div class="day" id="dayl">Day 0 / 180</div>
+          <div class="bar"><i id="prog"></i></div>
+          <span class="chip" id="chipFever">Fever signal: low</span>
+          <span class="chip" id="chipDriveA">AI donor drive: off</span>
+          <span class="chip" id="chipDriveB">Baseline donor drive: off</span>
+        </div>
+        <table id="kpi">
+          <thead><tr><th>Season so far</th><th>Current practice</th><th>PlateletIQ (AI)</th><th>Change</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="card section">
+        <h2>Network today: stock per hospital by remaining shelf life</h2>
+        <div class="nets">
+          <div class="net"><h3>Current practice <small>· fixed 2-day par, no sharing</small></h3><svg class="netsvg" id="netB" viewBox="0 0 460 410" role="img" aria-label="Baseline network"></svg></div>
+          <div class="net"><h3>PlateletIQ <small>· forecast-driven, shared network</small></h3><svg class="netsvg" id="netA" viewBox="0 0 460 410" role="img" aria-label="AI network"></svg></div>
+        </div>
+        <div class="legend">
+          <span><i class="sw" style="background:var(--age5)"></i>fresh</span>
+          <span><i class="sw" style="background:var(--age3)"></i>mid-life</span>
+          <span><i class="sw" style="background:var(--age1)"></i>expires today</span>
+          <span><svg width="26" height="8"><line x1="0" y1="4" x2="26" y2="4" stroke="#aaa" stroke-width="1.5"/></svg>routine supply</span>
+          <span><svg width="26" height="8"><line x1="0" y1="4" x2="26" y2="4" stroke="#111" stroke-width="2" stroke-dasharray="4 3"/></svg>AI lateral transfer</span>
+          <span><svg width="26" height="8"><line x1="0" y1="4" x2="26" y2="4" stroke="#b3261e" stroke-width="2"/></svg>emergency</span>
+          <span>“left · used” = units in stock at day end · units demanded today</span><span style="color:#b3261e">▲ patients short today</span>
+        </div>
+      </div>
+
+      <div class="card section charts">
+        <div class="chart"><h3>Daily platelet demand vs AI forecast</h3><canvas id="ch1"></canvas>
+          <div class="keyline"><span><b class="r"></b>actual demand</span><span><b></b>AI forecast</span><span><b class="f"></b>fever signal (leads by 4 days)</span></div></div>
+        <div class="chart"><h3>Cumulative units wasted (expired)</h3><canvas id="ch2"></canvas>
+          <div class="keyline"><span><b class="g"></b>current practice</span><span><b></b>PlateletIQ</span></div></div>
+        <div class="chart"><h3>Cumulative patients short of platelets (units)</h3><canvas id="ch3"></canvas>
+          <div class="keyline"><span><b class="g"></b>current practice</span><span><b></b>PlateletIQ</span></div></div>
+        <div class="chart"><h3>Cumulative cost (₹ lakh)</h3><canvas id="ch4"></canvas>
+          <div class="keyline"><span><b class="g"></b>current practice</span><span><b></b>PlateletIQ</span></div></div>
+      </div>
+
+      <div class="card section">
+        <h2>PlateletIQ decision log</h2>
+        <div class="log" id="log"><div>Press Run to start the season.</div></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="card section">
+    <h2>Experiment: 30 independent seasons</h2>
+    <p class="small" style="margin-top:0">A single season can be lucky. This runs 30 seasons with different seeds under the current settings and reports the mean ± standard deviation, as reported in the case study.</p>
+    <div class="batchrow"><button id="batch" class="primary">Run 30 replications</button><button id="csv" disabled>Download CSV</button><span class="small" id="bstat"></span></div>
+    <table id="btab"><thead><tr><th>Metric (per season)</th><th>Current practice</th><th>PlateletIQ (AI)</th><th>Change</th></tr></thead><tbody><tr><td colspan="4" class="small" style="text-align:left">Not run yet.</td></tr></tbody></table>
+  </div>
+
+  <div class="card section">
+    <h2>How PlateletIQ decides, every morning</h2>
+    <div class="how">
+      <div class="step"><b>1 · Sense</b><h4>Fever signal</h4><p>Daily count of fever / NS1-positive cases from surveillance. Platelet need follows it about 4 days later, after the critical phase of dengue.</p></div>
+      <div class="step"><b>2 · Learn</b><h4>Online forecaster</h4><p>Recursive least squares per hospital, pre-trained on last season and updated daily. It predicts demand 0 to 4 days ahead with an uncertainty band.</p></div>
+      <div class="step"><b>3 · Produce</b><h4>Separate to need</h4><p>Only as many donations are separated into platelets as the forecast needs. The rest stay as red cells and plasma, so nothing is lost.</p></div>
+      <div class="step"><b>4 · Allocate</b><h4>Age-aware + sharing</h4><p>Each unit goes to a site that will use it before it expires. Near-expiry surplus moves to busier sites, and emergencies draw on neighbours.</p></div>
+      <div class="step"><b>5 · Mobilise</b><h4>Early donor drives</h4><p>When forecast need outruns expected donations, donor camps are called before shortages appear, not after.</p></div>
+    </div>
+    <div class="two" style="margin-top:14px">
+      <div>
+        <p class="small"><b>Model (per hospital h, day t)</b></p>
+        <div class="eq">d̂(h,t+k) = w(t+k) · [ a_h + b_h · f(t+k−4) ]     k = 0..4
+a_h, b_h  ← recursive least squares, forgetting λ = 0.97
+σ_h²      ← EWMA of squared forecast errors
+target_h  = d̂(t) + 0.35·d̂(t+1) + 0.9·σ_h
+separate  = min(donations, Σ_k≤2 d̂ + z·σ − network stock)
+drive if  Σ d̂(t+3..t+7) > 0.97·expected donations + 0.3·stock</div>
+      </div>
+      <div>
+        <p class="small"><b>Current practice (baseline)</b>: every donation is separated into platelets. Each hospital keeps a fixed par of 2 days' average use (minimum 5), reviewed weekly. Units are issued first-in-first-out, with no visibility of other hospitals' stock. Donor drives are called only after shortages above 3% over 3 days.</p>
+        <p class="small"><b>Costs used</b> (₹ per unit): expired unit 1,500; patient short 9,000 (emergency apheresis / delayed care proxy); lateral transfer 250; emergency dispatch 600; donor camp 20,000.</p>
+        <p class="small"><b>Note:</b> hospital names and demand data are synthetic, calibrated to typical Indian district networks. Results show relative policy performance, not clinical outcomes.</p>
+      </div>
+    </div>
+  </div>
+</main>
+<footer><div class="wrap">PlateletIQ simulation · Artificial Intelligence Case Study · Harshad Borah (24BCE0666) · Runs entirely in your browser; no data leaves your device.</div></footer>
+
+<script>
+/* PlateletIQ simulation engine
+ * Discrete-time (daily) simulation of a regional platelet supply network:
+ * one Regional Blood Centre (RBC) + N hospitals. Two policies are run on the
+ * SAME random demand/donation streams (common random numbers) so differences
+ * are caused only by decision logic:
+ *   BASELINE  – current practice: separate all donations, fixed "2-days-cover" par
+ *               levels, FIFO issue, no lateral sharing, reactive donor drives.
+ *   AI        – PlateletIQ: online-learned demand forecaster driven by a leading
+ *               fever-surveillance signal, demand-driven component separation,
+ *               age-aware allocation, lateral transshipment of near-expiry units,
+ *               and proactive donor mobilisation.
+ * Pure JS, no dependencies. Works in browser (window.PlateletSim) and Node.
+ */
+(function (root) {
+  'use strict';
+
+  // ---------- seeded RNG (mulberry32) ----------
+  function rng(seed) {
+    var a = (seed >>> 0) || 1;
+    return function () {
+      a = (a + 0x6D2B79F5) >>> 0;
+      var t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function poisson(r, lam) {
+    if (!(lam > 0)) return 0;
+    if (lam > 60) { // normal approximation
+      var u1 = Math.max(r(), 1e-12), u2 = r();
+      var z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+      return Math.max(0, Math.round(lam + Math.sqrt(lam) * z));
+    }
+    var L = Math.exp(-lam), k = 0, p = 1;
+    do { k++; p *= r(); } while (p > L);
+    return k - 1;
+  }
+  function gauss(r) {
+    var u1 = Math.max(r(), 1e-12), u2 = r();
+    return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  }
+
+  var HOSPITALS = [
+    { name: 'Metro Medical College', short: 'MMC', base: 16, sens: 1.0 },
+    { name: 'District General Hospital', short: 'DGH', base: 11, sens: 1.2 },
+    { name: 'Oncology & Haematology Centre', short: 'OHC', base: 9, sens: 0.3 },
+    { name: "Children's Hospital", short: 'CHL', base: 6, sens: 1.4 },
+    { name: 'Community Hospital East', short: 'CHE', base: 5, sens: 1.0 },
+    { name: 'Trauma Centre West', short: 'TCW', base: 4, sens: 0.5 },
+    { name: 'Rural Health Centre North', short: 'RHN', base: 3, sens: 1.1 },
+    { name: 'Railway Hospital South', short: 'RHS', base: 3, sens: 0.8 }
+  ];
+  // weekly demand profile (Sun..Sat) and donation profile
+  var DOW_DEMAND = [0.82, 1.06, 1.06, 1.05, 1.04, 1.02, 0.95];
+  var DOW_DONOR = [0.70, 1.05, 1.05, 1.05, 1.05, 1.05, 1.05];
+
+  var SCENARIOS = {
+    normal:   { label: 'Normal season (no outbreak)', outbreakAmp: 0, supplyFactor: 1.15 },
+    dengue:   { label: 'Dengue outbreak season', outbreakAmp: 0.9, supplyFactor: 1.15 },
+    severe:   { label: 'Severe dengue outbreak', outbreakAmp: 1.4, supplyFactor: 1.15 },
+    shortage: { label: 'Outbreak + donor shortfall', outbreakAmp: 0.9, supplyFactor: 1.0 }
+  };
+
+  function defaults() {
+    return {
+      seed: 2026, days: 180, nHosp: 6, shelf: 5,
+      supplyFactor: 1.15, outbreakAmp: 0.9, outbreakPeak: 95, outbreakWidth: 14,
+      feverLead: 4, feverNoise: 0.08,
+      ai: { forecast: true, smartProduction: true, ageAlloc: true, transship: true, donorDrive: true },
+      cost: { waste: 1500, shortage: 9000, transfer: 250, emergency: 600, drive: 20000 },
+      driveBoost: 0.45, driveDays: 7, driveLag: 3, driveCooldown: 7
+    };
+  }
+  function merge(a, b) {
+    var o = {}, k;
+    for (k in a) o[k] = (a[k] && typeof a[k] === 'object' && !Array.isArray(a[k])) ? merge(a[k], {}) : a[k];
+    if (b) for (k in b) {
+      if (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k]) && o[k] && typeof o[k] === 'object') o[k] = merge(o[k], b[k]);
+      else if (b[k] !== undefined) o[k] = b[k];
+    }
+    return o;
+  }
+
+  // ---------- exogenous world (shared by both policies) ----------
+  function outbreakMult(t, amp, peak, width, sens) {
+    return 1 + amp * sens * Math.exp(-((t - peak) * (t - peak)) / (2 * width * width));
+  }
+  function buildWorld(cfg) {
+    var r = rng(cfg.seed);
+    var hosp = HOSPITALS.slice(0, cfg.nHosp);
+    var T = cfg.days, H = hosp.length;
+    var baseTotal = hosp.reduce(function (s, h) { return s + h.base; }, 0);
+    var w = { hosp: hosp, T: T, H: H, baseTotal: baseTotal, demand: [], lambda: [], donations: [], fever: [], dow: [] };
+    // fever-surveillance signal: leads true outbreak intensity by feverLead days
+    for (var t = 0; t < T + 10; t++) {
+      var lead = outbreakMult(t + cfg.feverLead, cfg.outbreakAmp, cfg.outbreakPeak, cfg.outbreakWidth, 1) - 1;
+      w.fever.push(Math.max(0, lead + cfg.feverNoise * gauss(r) * (0.3 + lead)));
+    }
+    for (t = 0; t < T; t++) {
+      var dw = t % 7; w.dow.push(dw);
+      var row = [], lrow = [];
+      for (var h = 0; h < H; h++) {
+        var lam = hosp[h].base * DOW_DEMAND[dw] * outbreakMult(t, cfg.outbreakAmp, cfg.outbreakPeak, cfg.outbreakWidth, hosp[h].sens);
+        lrow.push(lam); row.push(poisson(r, lam));
+      }
+      w.demand.push(row); w.lambda.push(lrow);
+      w.donations.push(poisson(r, baseTotal * cfg.supplyFactor * DOW_DONOR[dw]));
+    }
+    // prior-year history (different outbreak) used to pre-train the AI forecaster
+    var pr = rng(cfg.seed ^ 0x9E3779B9);
+    var pAmp = 0.8 + pr() * 1.2, pPeak = 60 + Math.floor(pr() * 120);
+    w.history = [];
+    for (t = 0; t < 365; t++) {
+      var fv = Math.max(0, outbreakMult(t + cfg.feverLead, pAmp, pPeak, 14, 1) - 1 + cfg.feverNoise * gauss(pr));
+      var drow = [];
+      for (h = 0; h < H; h++) drow.push(poisson(pr, hosp[h].base * DOW_DEMAND[t % 7] * outbreakMult(t, pAmp, pPeak, 14, hosp[h].sens)));
+      w.history.push({ dow: t % 7, feverLag: t >= cfg.feverLead ? null : 0, fever: fv, d: drow });
+    }
+    return w;
+  }
+
+  // ---------- inventory helpers: inv[r] = units with r days of life left (r=1..L) ----------
+  function newInv(L) { var a = []; for (var i = 0; i <= L; i++) a.push(0); return a; }
+  function invSum(inv) { var s = 0; for (var i = 1; i < inv.length; i++) s += inv[i]; return s; }
+  function take(inv, n, oldestFirst) { // remove n units, return array of {r,count}
+    var got = [], L = inv.length - 1;
+    for (var k = 0; k < L && n > 0; k++) {
+      var r = oldestFirst ? 1 + k : L - k;
+      var q = Math.min(inv[r], n);
+      if (q > 0) { inv[r] -= q; n -= q; got.push([r, q]); }
+    }
+    return got;
+  }
+  function put(inv, lots) { var c = 0; lots.forEach(function (l) { inv[l[0]] += l[1]; c += l[1]; }); return c; }
+
+  // ---------- AI forecaster: recursive least squares per hospital ----------
+  // demand_h(t) ≈ dowFactor(t) * (a_h + b_h * fever(t - lead)), learned online (forgetting 0.97)
+  function Forecaster(H, lead) {
+    this.H = H; this.lead = lead; this.lam = 0.97;
+    this.w = []; this.P = []; this.sig2 = []; this.dowF = DOW_DEMAND.slice();
+    for (var h = 0; h < H; h++) { this.w.push([5, 0]); this.P.push([[100, 0], [0, 100]]); this.sig2.push(4); }
+  }
+  Forecaster.prototype.learnDow = function (hist) {
+    var s = [0, 0, 0, 0, 0, 0, 0], c = [0, 0, 0, 0, 0, 0, 0], tot = 0, n = 0;
+    hist.forEach(function (row) { var d = row.d.reduce(function (a, b) { return a + b; }, 0); s[row.dow] += d; c[row.dow]++; tot += d; n++; });
+    var mean = tot / n;
+    for (var i = 0; i < 7; i++) this.dowF[i] = c[i] ? (s[i] / c[i]) / mean : 1;
+  };
+  Forecaster.prototype.update = function (h, dow, fev, y) {
+    var x = [this.dowF[dow], this.dowF[dow] * fev], w = this.w[h], P = this.P[h], lam = this.lam;
+    var Px = [P[0][0] * x[0] + P[0][1] * x[1], P[1][0] * x[0] + P[1][1] * x[1]];
+    var den = lam + x[0] * Px[0] + x[1] * Px[1];
+    var K = [Px[0] / den, Px[1] / den];
+    var yhat = w[0] * x[0] + w[1] * x[1], e = y - yhat;
+    w[0] += K[0] * e; w[1] += K[1] * e;
+    if (w[1] < 0) w[1] = 0;
+    for (var i = 0; i < 2; i++) for (var j = 0; j < 2; j++) P[i][j] = (P[i][j] - K[i] * Px[j]) / lam;
+    this.sig2[h] = 0.93 * this.sig2[h] + 0.07 * e * e;
+  };
+  Forecaster.prototype.predict = function (h, dow, fev) {
+    var w = this.w[h];
+    return Math.max(0.2, this.dowF[dow] * (w[0] + w[1] * fev));
+  };
+  Forecaster.prototype.sigma = function (h, mu) { return Math.sqrt(Math.max(this.sig2[h], mu * 0.8, 1)); };
+
+  // ---------- one policy run ----------
+  function PolicyRun(kind, cfg, world) {
+    this.kind = kind; this.cfg = cfg; this.w = world;
+    var H = world.H, L = cfg.shelf - 1; // 1 day lost to testing → units arrive with L days left
+    this.L = L;
+    this.centre = newInv(L);
+    this.inv = []; for (var h = 0; h < H; h++) this.inv.push(newInv(L));
+    // initial stock: ~1.5 days of demand at each hospital, spread over ages
+    for (h = 0; h < H; h++) {
+      var n0 = Math.round(world.hosp[h].base * 1.5);
+      for (var i = 0; i < n0; i++) this.inv[h][1 + (i % L)]++;
+    }
+    for (i = 0; i < Math.round(world.baseTotal * 0.5); i++) this.centre[1 + (i % L)]++;
+    this.par = world.hosp.map(function (x) { return Math.max(5, Math.ceil(2 * x.base)); });
+    this.histDemand = []; // observed demand rows
+    this.driveUntil = -1; this.driveStart = -1; this.lastDrive = -999;
+    this.t = 0; this.log = []; this.days = [];
+    this.tot = { demand: 0, used: 0, short: 0, wasteH: 0, wasteC: 0, produced: 0, transfers: 0, emergency: 0, cost: 0, ageSum: 0, drives: 0 };
+    this.lastTransfers = []; // for visualisation
+    this.lastForecast = world.hosp.map(function () { return 0; });
+    if (kind === 'ai') {
+      this.fc = new Forecaster(H, cfg.feverLead);
+      this.fc.learnDow(world.history);
+      // pre-train on last year's data
+      for (var t = cfg.feverLead; t < world.history.length; t++) {
+        var fv = world.history[t - cfg.feverLead].fever;
+        for (h = 0; h < H; h++) this.fc.update(h, world.history[t].dow, fv, world.history[t].d[h]);
+      }
+    }
+  }
+  PolicyRun.prototype.feverFor = function (day) { // signal available at decision time for target day
+    var src = day - this.cfg.feverLead;
+    if (src < 0) return 0;
+    if (src > this.t) src = this.t; // cannot see the future
+    return this.w.fever[src];
+  };
+  PolicyRun.prototype.forecast = function (h, day) {
+    if (this.kind !== 'ai' || !this.cfg.ai.forecast) { // naive moving average
+      var n = Math.min(28, this.histDemand.length), s = 0;
+      for (var i = this.histDemand.length - n; i < this.histDemand.length; i++) s += this.histDemand[i][h];
+      return n ? s / n : this.w.hosp[h].base;
+    }
+    return this.fc.predict(h, day % 7, this.feverFor(day));
+  };
+  PolicyRun.prototype.sigma = function (h, mu) {
+    if (this.kind === 'ai' && this.cfg.ai.forecast) return this.fc.sigma(h, mu);
+    return Math.sqrt(Math.max(mu, 1)) * 1.3;
+  };
+
+  PolicyRun.prototype.step = function () {
+    var cfg = this.cfg, w = this.w, t = this.t, H = w.H, L = this.L, self = this, isAI = this.kind === 'ai';
+    if (t >= w.T) return false;
+    var day = { t: t, shortBy: [], demand: 0, used: 0, short: 0, wasteH: 0, wasteC: 0, produced: 0, transfers: 0, emergency: 0, cost: 0, drive: false, forecast: 0 };
+    this.lastTransfers = []; var log = [];
+    var F = [], S = [];
+    for (var h = 0; h < H; h++) { F.push(this.forecast(h, t)); S.push(this.sigma(h, F[h])); }
+    this.lastForecast = F.slice();
+    day.forecast = F.reduce(function (a, b) { return a + b; }, 0);
+
+    // 1) donor drive (extra donations)
+    var don = w.donations[t];
+    var driveOn = t >= this.driveStart && t <= this.driveUntil;
+    if (driveOn) { don += Math.round(w.baseTotal * cfg.driveBoost * DOW_DONOR[t % 7]); day.drive = true; }
+
+    // 2) production / component separation
+    var produce = don;
+    if (isAI && cfg.ai.smartProduction) {
+      var need = 0;
+      for (var k = 0; k < Math.min(L, 3); k++) for (h = 0; h < H; h++) need += this.forecast(h, t + k);
+      var sd = 0; for (h = 0; h < H; h++) sd += S[h] * S[h]; sd = Math.sqrt(sd * 3);
+      var stock = invSum(this.centre); for (h = 0; h < H; h++) stock += invSum(this.inv[h]);
+      produce = Math.min(don, Math.max(0, Math.ceil(need + 1.0 * sd - stock)));
+    }
+    this.centre[L] += produce; day.produced = produce;
+
+    // 3) AI lateral transshipment of near-expiry surplus
+    if (isAI && cfg.ai.transship) {
+      for (var r = 1; r <= Math.min(2, L); r++) {
+        for (h = 0; h < H; h++) {
+          var older = 0; for (var q = 1; q <= r; q++) older += this.inv[h][q];
+          var canUse = 0; for (k = 0; k < r; k++) canUse += this.forecast(h, t + k);
+          var surplus = Math.min(this.inv[h][r], Math.floor(older - canUse * 1.05));
+          if (surplus <= 0) continue;
+          // receivers: hospitals that can consume extra units of this age in time
+          var recv = [];
+          for (var g = 0; g < H; g++) if (g !== h) {
+            var og = 0; for (q = 1; q <= r; q++) og += this.inv[g][q];
+            var cu = 0; for (k = 0; k < r; k++) cu += this.forecast(g, t + k);
+            var room = Math.floor(cu * 0.9 - og);
+            if (room > 0) recv.push([g, room]);
+          }
+          recv.sort(function (a, b) { return b[1] - a[1]; });
+          for (var j = 0; j < recv.length && surplus > 0; j++) {
+            var mv = Math.min(surplus, recv[j][1]);
+            this.inv[h][r] -= mv; this.inv[recv[j][0]][r] += mv; surplus -= mv;
+            day.transfers += mv; this.lastTransfers.push({ from: h, to: recv[j][0], n: mv, type: 'lateral' });
+            log.push('Moved ' + mv + ' unit(s) expiring in ' + r + 'd from ' + w.hosp[h].short + ' → ' + w.hosp[recv[j][0]].short);
+          }
+        }
+      }
+    }
+
+    // 4) routine distribution from centre
+    if (!isAI) {
+      if (t % 7 === 0 && this.histDemand.length >= 7) { // weekly par review: 2 days of cover
+        for (h = 0; h < H; h++) this.par[h] = Math.max(5, Math.ceil(2 * this.forecast(h, t)));
+      }
+      for (h = 0; h < H; h++) {
+        var want = Math.max(0, this.par[h] - invSum(this.inv[h]));
+        var lots = take(this.centre, want, true); put(this.inv[h], lots);
+        var c = lots.reduce(function (a, b) { return a + b[1]; }, 0);
+        if (c) this.lastTransfers.push({ from: -1, to: h, n: c, type: 'routine' });
+      }
+    } else {
+      var targ = [];
+      for (h = 0; h < H; h++) {
+        // cover today + 35% of tomorrow + safety; centre keeps pooled buffer
+        targ.push(Math.ceil(F[h] + 0.35 * this.forecast(h, t + 1) + 0.9 * S[h]));
+      }
+      var order = [];
+      for (h = 0; h < H; h++) order.push(h);
+      if (cfg.ai.ageAlloc) order.sort(function (a, b) { return F[b] - F[a]; }); // high-turnover sites get oldest units
+      var avail = invSum(this.centre), needs = order.map(function (h) { return Math.max(0, targ[h] - invSum(self.inv[h])); });
+      var totNeed = needs.reduce(function (a, b) { return a + b; }, 0);
+      var scale = totNeed > avail && totNeed > 0 ? avail / totNeed : 1; // fair rationing under scarcity
+      order.forEach(function (h, i) {
+        var n = Math.floor(needs[i] * scale + (scale < 1 ? 0.5 : 0)), c = 0;
+        if (!cfg.ai.ageAlloc) { c = put(self.inv[h], take(self.centre, n, true)); }
+        else {
+          // age-aware: give each unit the OLDEST age this site can still consume before expiry
+          // (FIFO queue position / daily forecast < remaining life), else the next fresher age.
+          var held = invSum(self.inv[h]), fd = Math.max(F[h], 0.5);
+          for (var u = 0; u < n; u++) {
+            var picked = 0;
+            for (var rr = 1; rr <= L; rr++) if (self.centre[rr] > 0 && (held + 1) / fd <= rr) { picked = rr; break; }
+            if (!picked) for (rr = L; rr >= 1; rr--) if (self.centre[rr] > 0) { picked = rr; break; }
+            if (!picked) break;
+            self.centre[picked]--; self.inv[h][picked]++; held++; c++;
+          }
+        }
+        if (c) self.lastTransfers.push({ from: -1, to: h, n: c, type: 'routine' });
+      });
+    }
+
+    // 5) demand & issuing (FIFO). Unmet → emergency from centre, then (AI) from neighbours
+    for (h = 0; h < H; h++) {
+      var d = w.demand[t][h]; day.demand += d;
+      var got = take(this.inv[h], d, true), used = 0;
+      got.forEach(function (l) { used += l[1]; self.tot.ageSum += (L + 1 - l[0]) * l[1]; });
+      var unmet = d - used;
+      if (unmet > 0) {
+        var em = take(this.centre, unmet, true), ec = 0;
+        em.forEach(function (l) { ec += l[1]; self.tot.ageSum += (L + 1 - l[0]) * l[1]; });
+        if (ec) { day.emergency += ec; this.lastTransfers.push({ from: -1, to: h, n: ec, type: 'emergency' }); }
+        used += ec; unmet -= ec;
+      }
+      if (unmet > 0 && isAI && cfg.ai.transship) {
+        for (var g2 = 0; g2 < H && unmet > 0; g2++) if (g2 !== h) {
+          // keep enough for own remaining need: today's forecast if not yet served, else a small overnight reserve
+          var keep = g2 < h ? Math.ceil(0.5 * this.forecast(g2, t + 1)) : Math.ceil(F[g2] + S[g2]);
+          var spare = invSum(this.inv[g2]) - keep;
+          if (spare <= 0) continue;
+          var mv2 = Math.min(spare, unmet), lots2 = take(this.inv[g2], mv2, true), c2 = 0;
+          lots2.forEach(function (l) { c2 += l[1]; self.tot.ageSum += (L + 1 - l[0]) * l[1]; });
+          used += c2; unmet -= c2; day.emergency += c2;
+          if (c2) { this.lastTransfers.push({ from: g2, to: h, n: c2, type: 'emergency' }); log.push('Emergency share: ' + c2 + ' unit(s) ' + w.hosp[g2].short + ' → ' + w.hosp[h].short); }
+        }
+      }
+      day.used += used; day.short += unmet; day.shortBy.push(unmet);
+    }
+    this.histDemand.push(w.demand[t].slice());
+
+    // 6) learning update
+    if (isAI && cfg.ai.forecast) for (h = 0; h < H; h++) this.fc.update(h, t % 7, this.feverFor(t), w.demand[t][h]);
+
+    // 7) donor drive decision
+    if (t - this.lastDrive >= cfg.driveCooldown && t + cfg.driveLag < w.T) {
+      var trigger = false;
+      if (isAI && cfg.ai.donorDrive) {
+        var fNeed = 0, fSup = 0;
+        for (k = cfg.driveLag; k < cfg.driveLag + 5; k++) {
+          for (h = 0; h < H; h++) fNeed += this.forecast(h, t + k);
+          fSup += w.baseTotal * cfg.supplyFactor * DOW_DONOR[(t + k) % 7];
+        }
+        var stk = invSum(this.centre); for (h = 0; h < H; h++) stk += invSum(this.inv[h]);
+        trigger = fNeed > fSup * 0.97 + 0.3 * stk;
+        if (trigger) log.push('Fever signal ↑ – forecast need ' + Math.round(fNeed) + ' vs supply ' + Math.round(fSup) + ': proactive donor drive called');
+      } else {
+        var sh = day.short, dm = day.demand;
+        for (k = Math.max(0, this.days.length - 2); k < this.days.length; k++) { sh += this.days[k].short; dm += this.days[k].demand; }
+        trigger = dm > 0 && sh / dm > 0.03;
+        if (trigger) log.push('Shortages observed – reactive donor drive called');
+      }
+      if (trigger) { day.cost += cfg.cost.drive; this.tot.cost += cfg.cost.drive; this.driveStart = t + cfg.driveLag; this.driveUntil = t + cfg.driveLag + cfg.driveDays - 1; this.lastDrive = t; this.tot.drives++; }
+    }
+
+    // 8) end of day ageing & expiry
+    for (h = 0; h < H; h++) { day.wasteH += this.inv[h][1]; for (r = 1; r < L; r++) this.inv[h][r] = this.inv[h][r + 1]; this.inv[h][L] = 0; }
+    day.wasteC = this.centre[1]; for (r = 1; r < L; r++) this.centre[r] = this.centre[r + 1]; this.centre[L] = 0;
+
+    var C = cfg.cost;
+    day.cost = (day.wasteH + day.wasteC) * C.waste + day.short * C.shortage + day.transfers * C.transfer + day.emergency * C.emergency;
+    ['demand', 'used', 'short', 'wasteH', 'wasteC', 'produced', 'transfers', 'emergency', 'cost'].forEach(function (k2) { self.tot[k2] += day[k2]; });
+    day.stock = invSum(this.centre); for (h = 0; h < H; h++) day.stock += invSum(this.inv[h]);
+    day.log = log; this.days.push(day); this.log = log; this.t++;
+    return true;
+  };
+  PolicyRun.prototype.kpi = function () {
+    var T = this.tot, waste = T.wasteH + T.wasteC;
+    return {
+      demand: T.demand, short: T.short, waste: waste, produced: T.produced,
+      serviceLevel: T.demand ? 100 * (1 - T.short / T.demand) : 100,
+      wastePct: T.produced ? 100 * waste / Math.max(1, T.produced) : 0,
+      transfers: T.transfers, emergency: T.emergency, cost: T.cost, drives: T.drives,
+      avgAge: T.used ? T.ageSum / T.used : 0
+    };
+  };
+
+  function Simulation(userCfg) {
+    this.cfg = merge(defaults(), userCfg || {});
+    this.world = buildWorld(this.cfg);
+    this.base = new PolicyRun('baseline', this.cfg, this.world);
+    this.ai = new PolicyRun('ai', this.cfg, this.world);
+  }
+  Simulation.prototype.step = function () { var a = this.base.step(); var b = this.ai.step(); return a || b; };
+  Simulation.prototype.runAll = function () { while (this.step()) { } return this; };
+  Simulation.prototype.done = function () { return this.base.t >= this.world.T; };
+
+  var api = { Simulation: Simulation, defaults: defaults, merge: merge, HOSPITALS: HOSPITALS, SCENARIOS: SCENARIOS, rng: rng };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.PlateletSim = api;
+})(this);
+
+</script>
+<script>
+(function(){
+'use strict';
+var P = window.PlateletSim;
+var $ = function(id){ return document.getElementById(id); };
+function showErr(e){ var b=$('err'); b.style.display='block'; b.textContent='Something went wrong: '+(e && e.message ? e.message : e)+'. Press Reset to continue.'; if (window.console) console.error(e); }
+window.addEventListener('error', function(ev){ showErr(ev.error || ev.message); });
+
+var sim=null, timer=null, playing=false, lastBatch=null;
+var COMPONENTS=['forecast','smartProduction','ageAlloc','transship','donorDrive'];
+
+// ---------- setup controls ----------
+Object.keys(P.SCENARIOS).forEach(function(k){ var o=document.createElement('option'); o.value=k; o.textContent=P.SCENARIOS[k].label; if(k==='dengue') o.selected=true; $('scen').appendChild(o); });
+function syncLabels(){
+  $('nhv').textContent=$('nh').value; $('shelfv').textContent=$('shelf').value+' d';
+  $('supv').textContent=(+$('sup').value).toFixed(2)+'×'; $('ampv').textContent='+'+Math.round(+$('amp').value*100)+'% peak';
+  $('speedv').textContent=$('speed').value+' days/s';
+}
+$('scen').addEventListener('change', function(){ var s=P.SCENARIOS[this.value]; $('amp').value=s.outbreakAmp; $('sup').value=s.supplyFactor; syncLabels(); reset(); });
+['nh','shelf','sup','amp'].forEach(function(id){ $(id).addEventListener('input', syncLabels); $(id).addEventListener('change', reset); });
+$('seed').addEventListener('change', reset);
+COMPONENTS.forEach(function(c){ $('c_'+c).addEventListener('change', reset); });
+$('speed').addEventListener('input', function(){ syncLabels(); if(playing){ stop(); play(); } });
+
+function readCfg(){
+  var seed=parseInt($('seed').value,10); if(!(seed>=1)) { seed=2026; $('seed').value=seed; } if(seed>999999){ seed=999999; $('seed').value=seed; }
+  var ai={}; COMPONENTS.forEach(function(c){ ai[c]=$('c_'+c).checked; });
+  return { seed:seed, nHosp:+$('nh').value, shelf:+$('shelf').value, supplyFactor:+$('sup').value, outbreakAmp:+$('amp').value, ai:ai };
+}
+
+// ---------- formatting ----------
+function fmt(n,d){ return (+n).toLocaleString('en-IN',{minimumFractionDigits:d||0,maximumFractionDigits:d||0}); }
+function lakh(n){ return '₹'+fmt(n/1e5,2)+' L'; }
+function pctChange(b,a){ if(!b) return a? '—':'0%'; var c=100*(a-b)/b; return (c>0?'+':'')+c.toFixed(0)+'%'; }
+
+var ROWS=[
+  ['Service level (demand met)', function(k){return fmt(k.serviceLevel,1)+'%';}, 'serviceLevel', +1, 'pp'],
+  ['Patients short (units)', function(k){return fmt(k.short);}, 'short', -1],
+  ['Units expired (wasted)', function(k){return fmt(k.waste);}, 'waste', -1],
+  ['Wastage % of units produced', function(k){return fmt(k.wastePct,1)+'%';}, 'wastePct', -1, 'pp'],
+  ['Total cost', function(k){return lakh(k.cost);}, 'cost', -1],
+  ['Avg. age at transfusion (days)', function(k){return fmt(k.avgAge,2);}, 'avgAge', -1],
+  ['Platelet units produced', function(k){return fmt(k.produced);}, 'produced', -1],
+  ['Lateral transfers (units)', function(k){return fmt(k.transfers);}, 'transfers', 0],
+  ['Donor drives called', function(k){return fmt(k.drives);}, 'drives', 0]
+];
+function deltaText(r,b,a){ if(r[4]==='pp'){ var d=a[r[2]]-b[r[2]]; return (d>0?'+':'')+d.toFixed(1)+' pp'; } return pctChange(b[r[2]],a[r[2]]); }
+function renderKPI(){
+  var b=sim.base.kpi(), a=sim.ai.kpi(), tb=$('kpi').tBodies[0], html='';
+  ROWS.forEach(function(r){
+    var better = r[3]===0? 0 : (r[3]>0 ? (a[r[2]]>b[r[2]]+1e-9) : (a[r[2]]<b[r[2]]-1e-9));
+    html+='<tr><td>'+r[0]+'</td><td class="num">'+r[1](b)+'</td><td class="num'+(better?' better':'')+'">'+r[1](a)+'</td><td class="delta">'+(sim.base.t? deltaText(r,b,a):'—')+'</td></tr>';
+  });
+  tb.innerHTML=html;
+}
+
+// ---------- network drawing ----------
+var NS='http://www.w3.org/2000/svg';
+function el(tag,attrs,txt){ var e=document.createElementNS(NS,tag); for(var k in attrs) e.setAttribute(k,attrs[k]); if(txt!=null) e.textContent=txt; return e; }
+var AGECOL=['#e6e6e3','#c4c4c0','#8f8f8b','#555553','#222222','#111111'];
+function ageColor(r,L){ if(r===1) return AGECOL[0]; var i=Math.round(1+(r-1)*(4/(Math.max(1,L-1)))); return AGECOL[Math.min(5,i)]; }
+function layout(H){ var pts=[],cx=230,cy=212,R=128; for(var i=0;i<H;i++){ var a=-Math.PI/2+i*2*Math.PI/H; pts.push([cx+R*Math.cos(a)*1.18, cy+R*Math.sin(a)]); } return {cx:cx,cy:cy,pts:pts}; }
+function drawNet(svg, run){
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  var w=sim.world, H=w.H, L=run.L, lay=layout(H), lastDay=run.days[run.days.length-1];
+  var defs=el('defs',{}); var mk=el('marker',{id:svg.id+'ar',viewBox:'0 0 10 10',refX:'8',refY:'5',markerWidth:'6',markerHeight:'6',orient:'auto-start-reverse'}); mk.appendChild(el('path',{d:'M0,0 L10,5 L0,10 z',fill:'#111'})); defs.appendChild(mk); svg.appendChild(defs);
+  function pos(i){ return i<0? [lay.cx,lay.cy] : lay.pts[i]; }
+  var sharedMax=0; [sim.base,sim.ai].forEach(function(rn){ rn.inv.forEach(function(iv){ var s2=0; for(var q=1;q<iv.length;q++) s2+=iv[q]; if(s2>sharedMax) sharedMax=s2; }); });
+  run.lastTransfers.forEach(function(tr){
+    var a=pos(tr.from), b=pos(tr.to), col= tr.type==='emergency'?'#b3261e':(tr.type==='lateral'?'#111':'#b5b5b2');
+    var attrs={x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:col,'stroke-width':Math.min(5,1+tr.n/6),'stroke-linecap':'round'};
+    if(tr.type==='lateral'){ attrs['stroke-dasharray']='5 4'; attrs['marker-end']='url(#'+svg.id+'ar)'; }
+    svg.appendChild(el('line',attrs));
+  });
+  // centre
+  var cs=0; for(var r=1;r<=L;r++) cs+=run.centre[r];
+  svg.appendChild(el('rect',{x:lay.cx-42,y:lay.cy-24,width:84,height:48,rx:4,fill:'#fff',stroke:'#111','stroke-width':1.5}));
+  svg.appendChild(el('text',{x:lay.cx,y:lay.cy-6,'text-anchor':'middle','font-size':11,fill:'#444'},'Blood centre'));
+  svg.appendChild(el('text',{x:lay.cx,y:lay.cy+12,'text-anchor':'middle','font-size':14,'font-weight':700,fill:'#111','font-family':'ui-monospace,Menlo,Consolas,monospace'},cs+' units'));
+  for(var h=0;h<H;h++){
+    var p=lay.pts[h], inv=run.inv[h], tot=0; for(r=1;r<=L;r++) tot+=inv[r];
+    var bw=36, maxH=62, scale=maxH/Math.max(24, sharedMax);
+    var x=p[0]-bw/2, yb=p[1]+18, y=yb;
+    svg.appendChild(el('rect',{x:x-1,y:yb-maxH-1,width:bw+2,height:maxH+2,fill:'#fafaf9',stroke:'#e2e2df'}));
+    for(r=1;r<=L;r++){ var hh=Math.min(inv[r]*scale, Math.max(0,y-(yb-maxH))); if(hh>0){ y-=hh; svg.appendChild(el('rect',{x:x,y:y,width:bw,height:hh,fill:ageColor(r,L),stroke: r===1?'#999':'none','stroke-width':0.5})); } }
+    svg.appendChild(el('text',{x:p[0],y:yb-maxH-16,'text-anchor':'middle','font-size':11.5,'font-weight':650,fill:'#111'},w.hosp[h].short));
+    svg.appendChild(el('text',{x:p[0],y:yb-maxH-4,'text-anchor':'middle','font-size':10,fill:'#666','font-family':'ui-monospace,Menlo,Consolas,monospace'},tot+' left · '+(lastDay? sim.world.demand[lastDay.t][h] : '-')+' used'));
+    var shortToday = lastDay && lastDay.shortBy ? lastDay.shortBy[h] : 0;
+    if(shortToday>0) svg.appendChild(el('text',{x:p[0],y:yb+14,'text-anchor':'middle','font-size':11,'font-weight':700,fill:'#b3261e'},'▲ '+shortToday+' short'));
+  }
+}
+
+// ---------- charts ----------
+function setupCanvas(c){ var dpr=window.devicePixelRatio||1, w=c.clientWidth||300, h=c.clientHeight||210; if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){ c.width=Math.round(w*dpr); c.height=Math.round(h*dpr);} var ctx=c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h); return {ctx:ctx,w:w,h:h}; }
+function niceMax(v){ if(v<=0) return 1; var p=Math.pow(10,Math.floor(Math.log10(v))), m=v/p; return (m<=1?1:m<=2?2:m<=2.5?2.5:m<=5?5:10)*p; }
+function chart(canvas, series, opt){
+  var s=setupCanvas(canvas), ctx=s.ctx, W=s.w, Hh=s.h, padL=44, padR=10, padT=8, padB=22, T=sim.world.T;
+  var max=0; series.forEach(function(se){ if(!se.right) se.data.forEach(function(v){ if(v>max) max=v; }); }); max=niceMax(max*1.05||1);
+  var X=function(i){ return padL+(W-padL-padR)*i/Math.max(1,T-1); }, Y=function(v){ return padT+(Hh-padT-padB)*(1-v/max); };
+  ctx.font='11px '+getComputedStyle(document.body).fontFamily; ctx.fillStyle='#7a7a7a'; ctx.strokeStyle='#ececea'; ctx.lineWidth=1;
+  for(var g=0;g<=4;g++){ var v=max*g/4, y=Y(v); ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke(); ctx.textAlign='right'; ctx.fillText(opt&&opt.fmt? opt.fmt(v): fmt(v), padL-6, y+4); }
+  ctx.textAlign='center'; for(var d=0; d<T; d+=30){ ctx.fillText('d'+d, X(d), Hh-6); }
+  if(opt && opt.shade){ // outbreak window shading
+    ctx.fillStyle='rgba(0,0,0,0.035)'; ctx.fillRect(X(opt.shade[0]),padT,X(opt.shade[1])-X(opt.shade[0]),Hh-padT-padB);
+  }
+  series.forEach(function(se){
+    var data=se.data; if(!data.length) return;
+    if(se.bars){ ctx.fillStyle=se.color; var bw=Math.max(1,(W-padL-padR)/T-0.6); data.forEach(function(v,i){ ctx.fillRect(X(i)-bw/2, Y(v), bw, Y(0)-Y(v)); }); return; }
+    var yf = se.right ? function(v){ return padT+(Hh-padT-padB)*(1-v/se.rmax); } : Y;
+    ctx.beginPath(); ctx.strokeStyle=se.color; ctx.lineWidth=se.width||2; ctx.setLineDash(se.dash||[]);
+    data.forEach(function(v,i){ if(i===0) ctx.moveTo(X(i),yf(v)); else ctx.lineTo(X(i),yf(v)); }); ctx.stroke(); ctx.setLineDash([]);
+  });
+}
+function cum(arr){ var s=0; return arr.map(function(v){ s+=v; return s; }); }
+function renderCharts(){
+  var a=sim.ai.days, b=sim.base.days, cfg=sim.cfg;
+  var shade = cfg.outbreakAmp>0 ? [Math.max(0,cfg.outbreakPeak-2*cfg.outbreakWidth), Math.min(sim.world.T-1,cfg.outbreakPeak+2*cfg.outbreakWidth)] : null;
+  var fev = sim.world.fever.slice(0, a.length);
+  var fmax = Math.max(0.5, Math.max.apply(null, sim.world.fever.slice(0,sim.world.T))*1.1);
+  chart($('ch1'), [
+    {data:a.map(function(d){return d.demand;}), color:'#e3e3e0', bars:true},
+    {data:a.map(function(d){return d.forecast;}), color:'#111', width:1.8},
+    {data:fev, color:'#666', dash:[2,3], width:1.5, right:true, rmax:fmax*1.7}
+  ], {shade:shade});
+  chart($('ch2'), [{data:cum(b.map(function(d){return d.wasteH+d.wasteC;})), color:'#9a9a9a', dash:[6,4]},{data:cum(a.map(function(d){return d.wasteH+d.wasteC;})), color:'#111'}], {shade:shade});
+  chart($('ch3'), [{data:cum(b.map(function(d){return d.short;})), color:'#9a9a9a', dash:[6,4]},{data:cum(a.map(function(d){return d.short;})), color:'#111'}], {shade:shade});
+  chart($('ch4'), [{data:cum(b.map(function(d){return d.cost/1e5;})), color:'#9a9a9a', dash:[6,4]},{data:cum(a.map(function(d){return d.cost/1e5;})), color:'#111'}], {shade:shade, fmt:function(v){return fmt(v, v<10?1:0);}});
+}
+
+// ---------- status ----------
+var logLines=[];
+function renderStatus(){
+  var t=sim.base.t, T=sim.world.T;
+  $('dayl').textContent='Day '+t+' / '+T; $('prog').style.width=(100*t/T)+'%';
+  var f = t>0 ? sim.world.fever[t-1] : 0, lvl = f>0.5?'high':(f>0.15?'rising':'low');
+  var cf=$('chipFever'); cf.textContent='Fever signal: '+lvl; cf.className='chip'+(lvl==='high'?' alert':(lvl==='rising'?' on':''));
+  var da=sim.ai.days.length && sim.ai.days[sim.ai.days.length-1].drive, db=sim.base.days.length && sim.base.days[sim.base.days.length-1].drive;
+  $('chipDriveA').textContent='AI donor drive: '+(da?'active':'off'); $('chipDriveA').className='chip'+(da?' on':'');
+  $('chipDriveB').textContent='Baseline donor drive: '+(db?'active':'off'); $('chipDriveB').className='chip'+(db?' on':'');
+  var done=sim.done(); $('play').disabled=done; $('stepb').disabled=done; $('end').disabled=done;
+  if(done){ $('play').textContent='▶ Run'; }
+}
+function renderLog(){
+  var box=$('log'); if(!logLines.length){ box.innerHTML='<div>No AI actions yet: the network is calm.</div>'; return; }
+  box.innerHTML = logLines.slice(-200).reverse().map(function(l){ return '<div><b>Day '+l[0]+'</b>'+l[1].replace(/</g,'&lt;')+'</div>'; }).join('');
+}
+function renderAll(){ try{ renderKPI(); drawNet($('netB'), sim.base); drawNet($('netA'), sim.ai); renderCharts(); renderStatus(); renderLog(); } catch(e){ stop(); showErr(e); } }
+
+function stepOnce(){
+  if(sim.done()) return false;
+  var ok = sim.step(), la=sim.ai.days[sim.ai.days.length-1];
+  if(la && la.log) la.log.forEach(function(m){ logLines.push([la.t, m]); });
+  return ok;
+}
+function reset(){
+  stop();
+  try{ sim=new P.Simulation(readCfg()); logLines=[]; $('err').style.display='none'; renderAll(); } catch(e){ showErr(e); }
+}
+function play(){
+  if(!sim || sim.done()) return; playing=true; $('play').textContent='❚❚ Pause';
+  var per=Math.max(1, Math.round(+$('speed').value/20)), interval=1000/Math.min(+$('speed').value,20);
+  timer=setInterval(function(){
+    try{ for(var i=0;i<per;i++){ if(!stepOnce()) break; } renderAll(); if(sim.done()) stop(); }
+    catch(e){ stop(); showErr(e); }
+  }, interval);
+}
+function stop(){ if(timer){ clearInterval(timer); timer=null; } playing=false; $('play').textContent='▶ Run'; }
+$('play').addEventListener('click', function(){ if(playing) stop(); else play(); });
+$('stepb').addEventListener('click', function(){ stop(); try{ stepOnce(); renderAll(); }catch(e){ showErr(e); } });
+$('end').addEventListener('click', function(){ stop(); try{ while(stepOnce()){} renderAll(); }catch(e){ showErr(e); } });
+$('reset').addEventListener('click', reset);
+var rt=null; window.addEventListener('resize', function(){ clearTimeout(rt); rt=setTimeout(function(){ if(sim) renderCharts(); }, 120); });
+
+// ---------- batch experiment ----------
+function stats(a){ var m=a.reduce(function(x,y){return x+y;},0)/a.length; var sd=Math.sqrt(a.reduce(function(x,y){return x+(y-m)*(y-m);},0)/Math.max(1,a.length-1)); return [m,sd]; }
+$('batch').addEventListener('click', function(){
+  var btn=this; btn.disabled=true; $('csv').disabled=true; var cfg=readCfg(), N=30, i=0, rows=[];
+  function chunk(){
+    try{
+      var until=Math.min(N,i+3);
+      for(;i<until;i++){ var c=P.merge(cfg,{seed:cfg.seed+i}); var s=new P.Simulation(c); s.runAll(); rows.push({seed:c.seed,b:s.base.kpi(),a:s.ai.kpi()}); }
+      $('bstat').textContent='Running… '+i+'/'+N;
+      if(i<N) setTimeout(chunk, 0); else finish();
+    } catch(e){ btn.disabled=false; showErr(e); }
+  }
+  function finish(){
+    lastBatch=rows; var html='';
+    ROWS.forEach(function(r){
+      var sb=stats(rows.map(function(x){return x.b[r[2]];})), sa=stats(rows.map(function(x){return x.a[r[2]];}));
+      var f=function(s){ var d = r[2]==='cost'?0:(r[2]==='avgAge'||r[4]==='pp'?2:0); if(r[2]==='cost') return '₹'+fmt(s[0]/1e5,1)+' L ± '+fmt(s[1]/1e5,1); return fmt(s[0],d)+' ± '+fmt(s[1],d); };
+      var o={}; o[r[2]]=sb[0]; var o2={}; o2[r[2]]=sa[0];
+      html+='<tr><td>'+r[0]+'</td><td class="num">'+f(sb)+'</td><td class="num">'+f(sa)+'</td><td class="delta">'+deltaText(r,o,o2)+'</td></tr>';
+    });
+    $('btab').tBodies[0].innerHTML=html; $('bstat').textContent='Done: 30 seasons, seeds '+cfg.seed+'–'+(cfg.seed+N-1)+'.'; btn.disabled=false; $('csv').disabled=false;
+  }
+  chunk();
+});
+$('csv').addEventListener('click', function(){
+  if(!lastBatch) return; var keys=['serviceLevel','short','waste','wastePct','cost','avgAge','produced','transfers','emergency','drives'];
+  var lines=['seed,policy,'+keys.join(',')];
+  lastBatch.forEach(function(r){ ['b','a'].forEach(function(p){ lines.push(r.seed+','+(p==='b'?'current_practice':'plateletiq')+','+keys.map(function(k){ return (+r[p][k]).toFixed(3); }).join(',')); }); });
+  var blob=new Blob([lines.join('\n')],{type:'text/csv'}), a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='plateletiq_30_seasons.csv'; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+});
+
+syncLabels(); reset();
+})();
+</script>
+</body>
+</html>
